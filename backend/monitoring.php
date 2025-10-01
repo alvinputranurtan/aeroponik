@@ -27,7 +27,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     http_response_code(500);
-    echo json_encode(['message' => 'Gagal prepare', 'error' => $conn->error]);
+    echo json_encode(['message' => 'Gagal prepare', 'sql' => $sql, 'error' => $conn->error]);
     exit;
 }
 

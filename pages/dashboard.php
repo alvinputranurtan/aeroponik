@@ -1,16 +1,16 @@
 <?php
-date_default_timezone_set('Asia/Jakarta'); // sesuaikan dengan waktu database
+date_default_timezone_set('Asia/Jakarta');
 include __DIR__.'/../functions/config.php';
 
-// Ambil data terbaru
-$sql = 'SELECT * FROM data ORDER BY id DESC LIMIT 1';
+// Ambil data terbaru dari tabel monitoring
+$sql = 'SELECT * FROM monitoring ORDER BY id DESC LIMIT 1';
 $result = $conn->query($sql);
 $row = $result->fetch_assoc();
 
 // Cek status perangkat
 $status_perangkat = 'Offline';
 if ($row) {
-    $last_time = strtotime($row['timestamp']);
+    $last_time = strtotime($row['created_at']);
     if ($last_time !== false && (time() - $last_time) <= 15) {
         $status_perangkat = 'Online';
     }
@@ -19,87 +19,102 @@ if ($row) {
 
 <div class="container my-4">
     <div class="row g-3">
-        <!-- Box 1: Kontrol Penyiraman -->
-        <!-- <div class="col-lg-3 col-sm-6 col-6">
-            <div class="card-custom-monitoring">
-                <h5>Sistem Penyiraman Otomatis</h5>
-                <div class="circle-button">Hidup</div>
-            </div>
-        </div> -->
-
-        <!-- Box 2 - 9: Statistik dan Sensor -->
+        <!-- Status Perangkat -->
         <div class="col-lg-3 col-sm-6 col-6">
             <div class="card-custom-monitoring">
                 <h5>Status Perangkat</h5>
                 <h3 id="status_perangkat"><?php echo $status_perangkat; ?></h3>
             </div>
         </div>
+
+        <!-- Status Pompa -->
         <div class="col-lg-3 col-sm-6 col-6">
             <div class="card-custom-monitoring">
                 <h5>Status Pompa</h5>
-                <h3 id="status_pompa"><?php echo ($row['status_pompa'] == 1) ? 'Hidup' : 'Mati'; ?></h3>
+                <h3 id="status_pompa">
+                    <?php echo ($row['status_pompa'] == '1') ? 'Aktif' : 'Nonaktif'; ?>
+                </h3>
             </div>
         </div>
+
+        <!-- Status Chiller -->
         <div class="col-lg-3 col-sm-6 col-6">
             <div class="card-custom-monitoring">
-                <h5>Kelembaban Tanah</h5>
-                <h3 id="kelembaban_tanah"><?php echo $row['kelembaban_tanah']; ?>%</h3>
+                <h5>Status Chiller</h5>
+                <h3 id="status_chiller">
+                    <?php echo ($row['status_chiller'] == '1') ? 'Aktif' : 'Nonaktif'; ?>
+                </h3>
             </div>
         </div>
+
+        <!-- Kelembaban Udara -->
         <div class="col-lg-3 col-sm-6 col-6">
             <div class="card-custom-monitoring">
                 <h5>Kelembaban Udara</h5>
-                <h3 id="kelembaban_udara"><?php echo $row['kelembaban_udara']; ?>%</h3>
+                <h3 id="kelembaban_udara"><?php echo number_format($row['dht22_kelembaban'], 1); ?>%</h3>
             </div>
         </div>
+
+        <!-- Suhu Udara -->
         <div class="col-lg-3 col-sm-6 col-6">
             <div class="card-custom-monitoring">
                 <h5>Suhu Udara</h5>
-                <h3 id="suhu_udara"><?php echo $row['suhu_udara']; ?>°c</h3>
+                <h3 id="suhu_udara"><?php echo number_format($row['dht22_suhu'], 1); ?>°C</h3>
             </div>
         </div>
-        <div class="col-lg-3 col-sm-6 col-6">
-            <div class="card-custom-monitoring">
-                <h5>Tombol Fisik Penyiraman Otomatis</h5>
-                <h3 id="tombol_fisik_penyiraman_otomatis"><?php echo ($row['tombol_fisik_penyiraman_otomatis'] == 1) ? 'Hidup' : 'Mati'; ?></h3>
-            </div>
-        </div>
-        <div class="col-lg-3 col-sm-6 col-6">
-            <div class="card-custom-monitoring">
-                <h5>Tombol Fisik Menyalakan Pompa</h5>
-                <h3 id="tombol_fisik_menyalakan_pompa"><?php echo ($row['tombol_fisik_menyalakan_pompa'] == 1) ? 'Hidup' : 'Mati'; ?></h3>
-            </div>
-        </div>
- 
 
-        <!-- Tambah kotak baru di sini -->
-        <!-- 
-    <div class="col-lg-3 col-sm-6 col-6">
-      <div class="card-custom-monitoring">
-        <h5>Nama Kotak Baru</h5>
-        <h3>Nilai</h3>
-      </div>
-    </div>
-    -->
+        <!-- Suhu Air 1 -->
+        <div class="col-lg-3 col-sm-6 col-6">
+            <div class="card-custom-monitoring">
+                <h5>Suhu Air 1</h5>
+                <h3 id="suhu_air1"><?php echo number_format($row['ds18b20_suhu1'], 1); ?>°C</h3>
+            </div>
+        </div>
+
+        <!-- Suhu Air 2 -->
+        <div class="col-lg-3 col-sm-6 col-6">
+            <div class="card-custom-monitoring">
+                <h5>Suhu Air 2</h5>
+                <h3 id="suhu_air2"><?php echo number_format($row['ds18b20_suhu2'], 1); ?>°C</h3>
+            </div>
+        </div>
+
+        <!-- pH Air -->
+        <div class="col-lg-3 col-sm-6 col-6">
+            <div class="card-custom-monitoring">
+                <h5>pH Air</h5>
+                <h3 id="ph_air"><?php echo number_format($row['ph_keasaman'], 1); ?></h3>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-function updateDashboard() {
-    fetch('/smartscreenhouse1/pages/ajax_dashboard.php')  // Ubah path ke absolut
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('status_perangkat').textContent = data.status_perangkat;
-            document.getElementById('status_pompa').textContent = data.status_pompa;
-            document.getElementById('kelembaban_tanah').textContent = data.kelembaban_tanah + '%';
-            document.getElementById('kelembaban_udara').textContent = data.kelembaban_udara + '%';
-            document.getElementById('suhu_udara').textContent = data.suhu_udara + '°c';
-            document.getElementById('tombol_fisik_penyiraman_otomatis').textContent = data.tombol_fisik_penyiraman_otomatis;
-            document.getElementById('tombol_fisik_menyalakan_pompa').textContent = data.tombol_fisik_menyalakan_pompa;
-        })
-        .catch(error => console.error('Error:', error)); // Tambah error handling
+async function updateDashboard() {
+    try {
+        const response = await fetch('/smartaeroponik/pages/ajax_dashboard.php');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        // Update semua elemen
+        document.getElementById('status_perangkat').textContent = data.status_perangkat;
+        document.getElementById('status_pompa').textContent = data.status_pompa === '1' ? 'Aktif' : 'Nonaktif';
+        document.getElementById('status_chiller').textContent = data.status_chiller === '1' ? 'Aktif' : 'Nonaktif';
+        document.getElementById('kelembaban_udara').textContent = data.dht22_kelembaban.toFixed(1) + '%';
+        document.getElementById('suhu_udara').textContent = data.dht22_suhu.toFixed(1) + '°C';
+        document.getElementById('suhu_air1').textContent = data.ds18b20_suhu1.toFixed(1) + '°C';
+        document.getElementById('suhu_air2').textContent = data.ds18b20_suhu2.toFixed(1) + '°C';
+        document.getElementById('ph_air').textContent = data.ph_keasaman.toFixed(1);
+    } catch (error) {
+        console.error('Error updating dashboard:', error);
+    }
 }
 
-// Update setiap 10 detik
-setInterval(updateDashboard, 10000);
+// Update pertama kali saat halaman dimuat
+updateDashboard();
+
+// Update setiap 5 detik
+setInterval(updateDashboard, 5000);
 </script>

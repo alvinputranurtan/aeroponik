@@ -2,54 +2,157 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Live Monitor Kelembaban Tanah</title>
+  <title>Monitoring Sistem Aeroponik</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
+    .container { display: flex; justify-content: space-around; margin-bottom: 20px; }
+    .control-panel { 
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+    .input-group { margin: 10px 0; }
+    input[type="number"] { padding: 5px; width: 100px; }
+    button { 
+      padding: 8px 15px;
+      background: #2e7d32;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover { background: #1b5e20; }
     table { margin: 0 auto; border-collapse: collapse; width: 80%; }
     th, td { border: 1px solid #ccc; padding: 8px; }
     th { background-color: #f2f2f2; }
     h1 { color: #2e7d32; }
+    .status-active { color: green; }
+    .status-inactive { color: red; }
+    .data-box {
+      background: #f5f5f5;
+      padding: 15px;
+      margin: 20px auto;
+      border-radius: 8px;
+      width: 80%;
+    }
+    .monitoring-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2e7d32;
+    }
   </style>
 </head>
 <body>
-  <h1>Live Monitor Kelembaban Tanah</h1>
+  <h1>Monitoring Sistem Aeroponik</h1>
+
+  <div class="data-box">
+    <h2>Data Monitoring Terkini</h2>
+    <div id="monitoring-data">
+      <p>Memuat data...</p>
+    </div>
+  </div>
+
   <table>
     <thead>
       <tr>
         <th>Timestamp (WIB)</th>
-        <th>Kelembaban</th>
+        <th>Durasi Pompa (detik)</th>
+        <th>Status Pompa</th>
       </tr>
     </thead>
     <tbody id="data-table">
-      <tr><td colspan="2">Memuat data...</td></tr>
+      <tr><td colspan="3">Memuat data...</td></tr>
     </tbody>
   </table>
 
   <script>
-    async function fetchData() {
+    const BASE_URL = "https://iotaja.telkomambis.com/backend";
+
+    async function fetchMonitoringData() {
       try {
-        const response = await fetch("https://iotaja.telkomambis.com/backend/api.php");
+        const response = await fetch("monitoring.php");
         const data = await response.json();
 
-        let table = document.getElementById("data-table");
-        table.innerHTML = ""; // kosongkan dulu
+        const monitoringDiv = document.getElementById("monitoring-data");
+        monitoringDiv.innerHTML = `
+          <p>Durasi Pompa: <span class="monitoring-value">${data.pump_duration} detik</span></p>
+          <p>Status Pompa: <span class="monitoring-value ${data.pump_status ? 'status-active' : 'status-inactive'}">
+            ${data.pump_status ? 'Aktif' : 'Nonaktif'}
+          </span></p>
+          <p>Terakhir Update: <span class="monitoring-value">${data.last_update}</span></p>
+        `;
 
-        data.slice().reverse().forEach(entry => {
+        // Update tabel riwayat
+        let table = document.getElementById("data-table");
+        table.innerHTML = "";
+
+        data.history.slice().reverse().forEach(entry => {
+          let pumpStatus = entry.pump_status ? 
+            '<span class="status-active">Aktif</span>' : 
+            '<span class="status-inactive">Nonaktif</span>';
+            
           let row = `<tr>
             <td>${entry.timestamp}</td>
-            <td>${entry.kelembaban}</td>
+            <td>${entry.pump_duration} detik</td>
+            <td>${pumpStatus}</td>
           </tr>`;
           table.innerHTML += row;
         });
 
       } catch (err) {
+        document.getElementById("monitoring-data").innerHTML = 
+          `<p style="color: red;">Gagal memuat data monitoring.</p>`;
         document.getElementById("data-table").innerHTML =
-          `<tr><td colspan="2">Gagal memuat data.</td></tr>`;
+          `<tr><td colspan="3">Gagal memuat data.</td></tr>`;
       }
     }
 
-    fetchData();
-    setInterval(fetchData, 2000); // refresh tiap 5 detik
+    async function updatePumpDuration() {
+      const duration = document.getElementById("pumpDuration").value;
+      try {
+        const response = await fetch(`${BASE_URL}/update_pump_duration.php`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `duration=${duration}`
+        });
+        
+        if (response.ok) {
+          alert('Durasi pompa berhasil diupdate!');
+          fetchMonitoringData();
+        } else {
+          alert('Gagal mengupdate durasi pompa');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function togglePump(status) {
+      try {
+        const response = await fetch(`${BASE_URL}/update_pump.php`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `status=${status ? 1 : 0}`
+        });
+        
+        if (response.ok) {
+          alert(`Pompa berhasil ${status ? 'diaktifkan' : 'dimatikan'}!`);
+          fetchMonitoringData();
+        } else {
+          alert('Gagal mengubah status pompa');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    fetchMonitoringData();
+    setInterval(fetchMonitoringData, 2000); // refresh tiap 2 detik
   </script>
 </body>
 </html>

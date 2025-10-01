@@ -71,16 +71,24 @@
 
     async function fetchMonitoringData() {
       try {
-        const response = await fetch("monitoring.php");
+        const response = await fetch(`${BASE_URL}/monitoring.php`);
         const data = await response.json();
+
+        console.log("Data dari server:", data); // untuk debugging
 
         const monitoringDiv = document.getElementById("monitoring-data");
         monitoringDiv.innerHTML = `
-          <p>Durasi Pompa: <span class="monitoring-value">${data.pump_duration} detik</span></p>
-          <p>Status Pompa: <span class="monitoring-value ${data.pump_status ? 'status-active' : 'status-inactive'}">
-            ${data.pump_status ? 'Aktif' : 'Nonaktif'}
+          <p>Kelembaban: <span class="monitoring-value">${data.dht22_kelembaban}%</span></p>
+          <p>Suhu Udara: <span class="monitoring-value">${data.dht22_suhu}°C</span></p>
+          <p>Suhu Air 1: <span class="monitoring-value">${data.ds18b20_suhu1}°C</span></p>
+          <p>Suhu Air 2: <span class="monitoring-value">${data.ds18b20_suhu2}°C</span></p>
+          <p>pH: <span class="monitoring-value">${data.ph_keasaman}</span></p>
+          <p>Status Pompa: <span class="monitoring-value ${data.status_pompa === '1' ? 'status-active' : 'status-inactive'}">
+            ${data.status_pompa === '1' ? 'Aktif' : 'Nonaktif'}
           </span></p>
-          <p>Terakhir Update: <span class="monitoring-value">${data.last_update}</span></p>
+          <p>Status Chiller: <span class="monitoring-value ${data.status_chiller === '1' ? 'status-active' : 'status-inactive'}">
+            ${data.status_chiller === '1' ? 'Aktif' : 'Nonaktif'}
+          </span></p>
         `;
 
         // Update tabel riwayat
@@ -101,10 +109,9 @@
         });
 
       } catch (err) {
+        console.error("Error:", err); // untuk debugging
         document.getElementById("monitoring-data").innerHTML = 
-          `<p style="color: red;">Gagal memuat data monitoring.</p>`;
-        document.getElementById("data-table").innerHTML =
-          `<tr><td colspan="3">Gagal memuat data.</td></tr>`;
+          `<p style="color: red;">Gagal memuat data monitoring: ${err.message}</p>`;
       }
     }
 

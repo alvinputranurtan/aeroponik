@@ -3,66 +3,39 @@
 header('Content-Type: application/json');
 include '../functions/config.php';
 
-// Ambil JSON dari ESP
-$json = file_get_contents('php://input');
-$data = json_decode($json, true);
+// Ambil raw body
+$raw = file_get_contents('php://input');
 
-// Kalau ?debug=1 dipanggil di browser → tampilkan JSON mentah
+// Debug: tampilkan raw body kalau ?debug=1
 if (isset($_GET['debug'])) {
-    echo json_encode([
-        'message' => 'DEBUG MODE',
-        'raw' => $json,
-        'decoded' => $data,
-    ]);
+    echo json_encode(['raw' => $raw]);
     exit;
 }
 
-// Validasi JSON
+$data = json_decode($raw, true);
 if (!$data) {
     http_response_code(400);
-    echo json_encode([
-        'message' => 'Invalid JSON',
-        'raw' => $json,
-    ]);
+    echo json_encode(['message' => 'Invalid JSON', 'raw' => $raw]);
     exit;
 }
 
-// Validasi field wajib
-$required = [
-    'user_id',
-    'dht22_kelembaban',
-    'dht22_suhu',
-    'ds18b20_suhu1',
-    'ds18b20_suhu2',
-    'ph_keasaman',
-    'status_pompa',
-    'status_chiller',
-];
-
+$required = ['user_id', 'dht22_kelembaban', 'dht22_suhu', 'ds18b20_suhu1', 'ds18b20_suhu2', 'ph_keasaman', 'status_pompa', 'status_chiller'];
 foreach ($required as $k) {
     if (!isset($data[$k])) {
         http_response_code(422);
-        echo json_encode([
-            'message' => "Field '$k' wajib ada",
-            'received' => $data,
-        ]);
+        echo json_encode(['message' => "Field '$k' wajib ada", 'raw' => $raw]);
         exit;
     }
 }
 
-// SQL Insert
 $sql = 'INSERT INTO monitoring 
 (user_id, dht22_kelembaban, dht22_suhu, ds18b20_suhu1, ds18b20_suhu2, ph_keasaman, status_pompa, status_chiller) 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-
 $stmt = $conn->prepare($sql);
+
 if (!$stmt) {
     http_response_code(500);
-    echo json_encode([
-        'message' => 'Gagal prepare statement',
-        'error' => $conn->error,
-        'sql' => $sql,
-    ]);
+    echo json_encode(['message' => 'Gagal prepare', 'error' => $conn->error, 'raw' => $raw]);
     exit;
 }
 
@@ -79,15 +52,13 @@ $stmt->bind_param(
 );
 
 if ($stmt->execute()) {
-    echo json_encode([
-        'message' => 'Data berhasil disimpan',
-        'insert_id' => $stmt->insert_id,
-    ]);
+    echo json_encode(['message' => 'Data berhasil disimpan', 'insert_id' => $stmt->insert_id]);
 } else {
     http_response_code(500);
     echo json_encode([
         'message' => 'Gagal menyimpan data',
         'error' => $stmt->error,
+        'raw' => $raw,
     ]);
 }
 

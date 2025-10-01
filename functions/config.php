@@ -13,6 +13,9 @@ if (session_status() === PHP_SESSION_NONE) {
 //     die("Akses hanya boleh melalui HTTPS");
 // }
 
+// Set PHP timezone
+date_default_timezone_set('Asia/Jakarta');
+
 // Koneksi DB
 $host = 'inosakti.com';
 $user = 'inosakti_useraeroponik';
@@ -24,6 +27,9 @@ if ($conn->connect_error) {
     exit('Koneksi gagal: '.$conn->connect_error);
 }
 $conn->set_charset('utf8mb4');
+
+// Set MySQL timezone
+$conn->query("SET time_zone = '+07:00'");
 
 // Regenerate session ID if not already done
 if (!isset($_SESSION['initialized'])) {

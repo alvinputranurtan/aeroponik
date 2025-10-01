@@ -171,7 +171,7 @@ const ChartManager = (() => {
         });
     }
 
-    // Return public API
+    // Return publicz API
     return {
         initialize
     };

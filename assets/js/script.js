@@ -14,7 +14,8 @@ $(document).ready(function () {
         // Start dashboard updates only when on dashboard page
         dashboardInterval = setInterval(updateDashboard, 5000);
       } else if (page === "grafik.php") {
-        loadGrafik(); // dari grafik.js
+        // Ganti loadGrafik() dengan ChartManager.initialize()
+        ChartManager.initialize();
       }
     });
 
@@ -63,7 +64,7 @@ $(document).ready(function () {
     // Cek kalau page awal adalah grafik → panggil fungsi manual
   const initialPage = new URLSearchParams(window.location.search).get("page") || "dashboard";
   if (initialPage === "grafik") {
-    loadGrafik();
+    ChartManager.initialize();
   }
 
 

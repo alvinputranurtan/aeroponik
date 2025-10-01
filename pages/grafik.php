@@ -86,5 +86,5 @@ require_once __DIR__.'/../functions/config.php';
 
 <!-- Load Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- Load grafik.js -->
-<script src="/smartaeroponik.inosakti.com/assets/js/grafik.js"></script>
+<!-- Load grafik.js dengan path relatif yang benar -->
+<script src="assets/js/grafik.js"></script>

@@ -122,3 +122,6 @@
 [2025-10-01 11:59:45] User alvin logout.
 [2025-10-01 11:59:46] User alvin login sukses.
 [2025-10-01 14:56:14] User alvin login sukses.
+[2025-10-01 16:33:47] User alvin logout.
+[2025-10-01 16:33:59] User alvin login sukses.
+[2025-10-01 21:59:59] User alvin logout.

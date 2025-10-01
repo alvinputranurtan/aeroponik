@@ -1,0 +1,4 @@
+$host = 'telkomambis.com';
+$user = 'telkomam_iotaja';
+$password = 'iotaja420##';
+$dbname = 'telkomam_iotaja';

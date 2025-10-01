@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Monitor Kelembaban Tanah</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
+    table { margin: 0 auto; border-collapse: collapse; width: 80%; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background-color: #f2f2f2; }
+    h1 { color: #2e7d32; }
+  </style>
+</head>
+<body>
+  <h1>Live Monitor Kelembaban Tanah</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp (WIB)</th>
+        <th>Kelembaban</th>
+      </tr>
+    </thead>
+    <tbody id="data-table">
+      <tr><td colspan="2">Memuat data...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    async function fetchData() {
+      try {
+        const response = await fetch("https://iotaja.telkomambis.com/backend/api.php");
+        const data = await response.json();
+
+        let table = document.getElementById("data-table");
+        table.innerHTML = ""; // kosongkan dulu
+
+        data.slice().reverse().forEach(entry => {
+          let row = `<tr>
+            <td>${entry.timestamp}</td>
+            <td>${entry.kelembaban}</td>
+          </tr>`;
+          table.innerHTML += row;
+        });
+
+      } catch (err) {
+        document.getElementById("data-table").innerHTML =
+          `<tr><td colspan="2">Gagal memuat data.</td></tr>`;
+      }
+    }
+
+    fetchData();
+    setInterval(fetchData, 2000); // refresh tiap 5 detik
+  </script>
+</body>
+</html>

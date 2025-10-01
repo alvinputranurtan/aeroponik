@@ -1,0 +1,22 @@
+host: telkomambis.com
+username: telkomam_iotaja
+password: iotaja420##
+database: iotaja
+
+teknologi yang digunakan:
+HTML
+CSS
+JavaScript
+PHP
+MySQL
+Bootstrap
+jQuery
+AJAX
+JSON
+REST API
+SASS
+CHARTJS
+NODEJS
+EXPRESSJS
+ESP32
+FREERTOS

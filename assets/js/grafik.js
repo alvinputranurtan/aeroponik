@@ -1,40 +1,63 @@
-function loadGrafik() {
+// Buat IIFE (Immediately Invoked Function Expression) untuk mengisolasi scope
+const ChartManager = (() => {
     // Store chart instances
     const charts = {};
+
+    // Konfigurasi chart (dropdown id → canvas, label, warna, field DB)
     const chartConfigs = {
         'periodKelembaban': {
             canvasId: 'chartKelembaban',
             label: 'Kelembaban Udara (%)',
-            color: '#2196f3',
+            color: 'rgba(32, 107, 196, 0.8)',
             dataKey: 'kelembaban'
         },
-        'periodSuhu': {
-            canvasId: 'chartSuhu',
-            labels: ['Suhu Udara (°C)', 'Suhu Air 1 (°C)', 'Suhu Air 2 (°C)'],
-            colors: ['#f44336', '#4caf50', '#9c27b0'],
-            dataKeys: ['suhu_udara', 'suhu_air1', 'suhu_air2']
+        'periodSuhuUdara': {
+            canvasId: 'chartSuhuUdara',
+            label: 'Suhu Udara (°C)',
+            color: 'rgba(220, 53, 69, 0.8)',
+            dataKey: 'suhu_udara'
+        },
+        'periodSuhuAir1': {
+            canvasId: 'chartSuhuAir1',
+            label: 'Suhu Air 1 (°C)',
+            color: 'rgba(40, 167, 69, 0.8)',
+            dataKey: 'suhu_air1'
+        },
+        'periodSuhuAir2': {
+            canvasId: 'chartSuhuAir2',
+            label: 'Suhu Air 2 (°C)',
+            color: 'rgba(111, 66, 193, 0.8)',
+            dataKey: 'suhu_air2'
         },
         'periodPH': {
             canvasId: 'chartPH',
             label: 'pH Air',
-            color: '#ff9800',
+            color: 'rgba(255, 123, 0, 0.8)',
             dataKey: 'ph'
         }
     };
-    
-    // Function to fetch data from server
+
+    // 🔹 Fetch data dari server
     async function fetchData(period) {
         try {
-            const response = await fetch(`../functions/get_chart_data.php?period=${period}`);
-            return await response.json();
+            const url = '/smartaeroponik.inosakti.com/functions/get_chart_data.php?period=' + period;
+            console.log('Fetching from:', url);
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('Received data:', data);
+            return data;
         } catch (error) {
             console.error('Error fetching data:', error);
             return null;
         }
     }
 
-    // Function to render or update single line chart
-    function renderSingleLineChart(canvasId, label, data, color, options = {}) {
+    // 🔹 Render / update chart tunggal
+    function renderChart(canvasId, label, data, color) {
         if (charts[canvasId]) {
             charts[canvasId].destroy();
         }
@@ -47,128 +70,114 @@ function loadGrafik() {
                 datasets: [{
                     label: label,
                     data: data.values,
-                    backgroundColor: color + '33',
+                    backgroundColor: color.replace('0.8', '0.1'),
                     borderColor: color,
                     fill: true,
-                    tension: 0.4
+                    tension: 0.3,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
                 plugins: {
                     title: {
                         display: true,
-                        text: label
+                        text: label,
+                        font: {
+                            size: 14,
+                            weight: '500'
+                        },
+                        padding: {
+                            top: 10,
+                            bottom: 15
+                        }
+                    },
+                    legend: {
+                        display: false
                     }
                 },
                 scales: {
-                    y: { 
+                    y: {
                         beginAtZero: true,
-                        ...options.yAxis
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
                     },
                     x: {
+                        grid: {
+                            display: false
+                        },
                         ticks: {
                             maxRotation: 45,
                             minRotation: 45
                         }
+                    }
+                },
+                layout: {
+                    padding: {
+                        left: 10,
+                        right: 10
                     }
                 }
             }
         });
     }
 
-    // Function to render multi-line chart (for temperature)
-    function renderMultiLineChart(canvasId, labels, data, colors) {
-        if (charts[canvasId]) {
-            charts[canvasId].destroy();
-        }
-
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        charts[canvasId] = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: labels.map((label, i) => ({
-                    label: label,
-                    data: data.values[i],
-                    borderColor: colors[i],
-                    tension: 0.4,
-                    fill: false
-                }))
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Grafik Suhu'
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Function to update charts
-    async function updateChart(selectId, period) {
-        const config = chartConfigs[selectId];
-        const data = await fetchData(period);
-        
-        if (!data) return;
-
-        if (selectId === 'periodSuhu') {
-            // Handle multi-line temperature chart
-            renderMultiLineChart(
-                config.canvasId,
-                config.labels,
-                {
-                    labels: data.labels,
-                    values: config.dataKeys.map(key => data[key])
-                },
-                config.colors
-            );
-        } else {
-            // Handle single line charts
-            const options = {
-                yAxis: selectId === 'periodKelembaban' ? 
-                    { max: 100 } : 
-                    (selectId === 'periodPH' ? { max: 14 } : {})
-            };
-
-            renderSingleLineChart(
+    // Render semua chart dengan data yang sama
+    function renderAllCharts(data) {
+        Object.entries(chartConfigs).forEach(([selectId, config]) => {
+            renderChart(
                 config.canvasId,
                 config.label,
-                {
-                    labels: data.labels,
-                    values: data[config.dataKey]
-                },
-                config.color,
-                options
+                { labels: data.labels, values: data[config.dataKey] },
+                config.color
             );
-        }
+        });
     }
 
-    // Handle period selection changes
-    document.querySelectorAll('.period-select').forEach(select => {
-        select.addEventListener('change', function() {
-            const period = this.value;
-            const selectId = this.id;
-            updateChart(selectId, period);
+    // Update single chart
+    async function updateSingleChart(selectId, period) {
+        const data = await fetchData(period);
+        if (!data) return;
+
+        const config = chartConfigs[selectId];
+        renderChart(
+            config.canvasId,
+            config.label,
+            { labels: data.labels, values: data[config.dataKey] },
+            config.color
+        );
+    }
+
+    // Initialize charts
+    async function initialize() {
+        // Single fetch untuk semua chart
+        const data = await fetchData('hourly');
+        if (data) {
+            renderAllCharts(data);
+        }
+
+        // Setup event listeners
+        document.querySelectorAll('.period-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const period = this.value;
+                const selectId = this.id;
+                updateSingleChart(selectId, period);
+            });
         });
-    });
+    }
 
-    // Initial load with hourly data for all charts
-    Object.keys(chartConfigs).forEach(selectId => {
-        updateChart(selectId, 'hourly');
-    });
-}
+    // Return public API
+    return {
+        initialize
+    };
+})();
 
-// Initialize charts when DOM is loaded
-document.addEventListener('DOMContentLoaded', loadGrafik);
+// Single event listener untuk initialization
+document.addEventListener('DOMContentLoaded', () => {
+    ChartManager.initialize();
+});

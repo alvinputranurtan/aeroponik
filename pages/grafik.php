@@ -2,16 +2,22 @@
 require_once __DIR__.'/../functions/config.php';
 ?>
 
+<style>
+/* Override khusus untuk chart container */
+.card-custom canvas {
+    max-height: 300px !important;
+    width: 100% !important;
+}
+</style>
+
 <div class="container my-4">
     <div class="row g-4">
         <!-- Grafik Kelembaban -->
         <div class="col-md-6">
-            <div class="card-custom">
+            <div class="card-custom"> <!-- Sudah menggunakan class dari styles.scss -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>Kelembaban Udara</h5>
-                    <select class="form-select form-select-sm period-select" 
-                            id="periodKelembaban" 
-                            style="width: auto">
+                    <select class="period-select" id="periodKelembaban"> <!-- Gunakan class period-select dari styles.scss -->
                         <option value="hourly">24 Jam Terakhir</option>
                         <option value="daily">7 Hari Terakhir</option>
                     </select>
@@ -20,19 +26,45 @@ require_once __DIR__.'/../functions/config.php';
             </div>
         </div>
 
-        <!-- Grafik Suhu -->
+        <!-- Grafik Suhu Udara -->
         <div class="col-md-6">
             <div class="card-custom">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Suhu (Udara & Air)</h5>
-                    <select class="form-select form-select-sm period-select" 
-                            id="periodSuhu" 
-                            style="width: auto">
+                    <h5>Suhu Udara</h5>
+                    <select class="period-select" id="periodSuhuUdara">
                         <option value="hourly">24 Jam Terakhir</option>
                         <option value="daily">7 Hari Terakhir</option>
                     </select>
                 </div>
-                <canvas id="chartSuhu"></canvas>
+                <canvas id="chartSuhuUdara"></canvas>
+            </div>
+        </div>
+
+        <!-- Grafik Suhu Air 1 -->
+        <div class="col-md-6">
+            <div class="card-custom">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Suhu Air 1</h5>
+                    <select class="period-select" id="periodSuhuAir1">
+                        <option value="hourly">24 Jam Terakhir</option>
+                        <option value="daily">7 Hari Terakhir</option>
+                    </select>
+                </div>
+                <canvas id="chartSuhuAir1"></canvas>
+            </div>
+        </div>
+
+        <!-- Grafik Suhu Air 2 -->
+        <div class="col-md-6">
+            <div class="card-custom">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Suhu Air 2</h5>
+                    <select class="period-select" id="periodSuhuAir2">
+                        <option value="hourly">24 Jam Terakhir</option>
+                        <option value="daily">7 Hari Terakhir</option>
+                    </select>
+                </div>
+                <canvas id="chartSuhuAir2"></canvas>
             </div>
         </div>
 
@@ -41,9 +73,7 @@ require_once __DIR__.'/../functions/config.php';
             <div class="card-custom">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5>pH Air</h5>
-                    <select class="form-select form-select-sm period-select" 
-                            id="periodPH" 
-                            style="width: auto">
+                    <select class="period-select" id="periodPH">
                         <option value="hourly">24 Jam Terakhir</option>
                         <option value="daily">7 Hari Terakhir</option>
                     </select>
@@ -56,156 +86,5 @@ require_once __DIR__.'/../functions/config.php';
 
 <!-- Load Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Initialize charts -->
-<script>
-let charts = {};
-
-async function loadGrafik(chartId = null) {
-    const period = chartId ? 
-        document.getElementById(`period${chartId}`).value : 
-        'hourly';
-    
-    try {
-        const response = await fetch(`../functions/get_chart_data.php?period=${period}`);
-        const data = await response.json();
-
-        if (!chartId || chartId === 'Kelembaban') {
-            updateKelembabanChart(data);
-        }
-        if (!chartId || chartId === 'Suhu') {
-            updateSuhuChart(data);
-        }
-        if (!chartId || chartId === 'PH') {
-            updatePHChart(data);
-        }
-    } catch (error) {
-        console.error('Error loading chart data:', error);
-    }
-}
-
-function updateKelembabanChart(data) {
-    const ctx = document.getElementById('chartKelembaban').getContext('2d');
-    
-    if (charts.kelembaban) {
-        charts.kelembaban.destroy();
-    }
-
-    charts.kelembaban = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.labels,
-            datasets: [{
-                label: 'Kelembaban (%)',
-                data: data.kelembaban,
-                borderColor: 'rgb(54, 162, 235)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Grafik Kelembaban Udara'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
-                }
-            }
-        }
-    });
-}
-
-function updateSuhuChart(data) {
-    const ctx = document.getElementById('chartSuhu').getContext('2d');
-    
-    if (charts.suhu) {
-        charts.suhu.destroy();
-    }
-
-    charts.suhu = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.labels,
-            datasets: [{
-                label: 'Suhu Udara (°C)',
-                data: data.suhu_udara,
-                borderColor: 'rgb(255, 99, 132)',
-                tension: 0.1
-            }, {
-                label: 'Suhu Air 1 (°C)',
-                data: data.suhu_air1,
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
-            }, {
-                label: 'Suhu Air 2 (°C)',
-                data: data.suhu_air2,
-                borderColor: 'rgb(153, 102, 255)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Grafik Suhu'
-                }
-            }
-        }
-    });
-}
-
-function updatePHChart(data) {
-    const ctx = document.getElementById('chartPH').getContext('2d');
-    
-    if (charts.ph) {
-        charts.ph.destroy();
-    }
-
-    charts.ph = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: data.labels,
-            datasets: [{
-                label: 'pH Air',
-                data: data.ph,
-                borderColor: 'rgb(255, 159, 64)',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Grafik pH Air'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 14
-                }
-            }
-        }
-    });
-}
-
-// Event listeners untuk perubahan periode
-document.querySelectorAll('.period-select').forEach(select => {
-    select.addEventListener('change', function() {
-        const chartId = this.id.replace('period', '');
-        loadGrafik(chartId);
-    });
-});
-
-// Load semua grafik saat halaman dimuat
-document.addEventListener('DOMContentLoaded', function() {
-    loadGrafik();
-});
-</script>
+<!-- Load grafik.js -->
+<script src="/smartaeroponik.inosakti.com/assets/js/grafik.js"></script>

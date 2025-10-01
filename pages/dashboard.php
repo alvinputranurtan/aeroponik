@@ -92,7 +92,7 @@ if ($row) {
 <script>
 async function updateDashboard() {
     try {
-        const response = await fetch('/smartaeroponik/pages/ajax_dashboard.php');
+        const response = await fetch('pages/ajax_dashboard.php');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }

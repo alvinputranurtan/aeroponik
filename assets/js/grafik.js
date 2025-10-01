@@ -40,7 +40,7 @@ const ChartManager = (() => {
     // 🔹 Fetch data dari server
     async function fetchData(period) {
         try {
-            const url = '/smartaeroponik.inosakti.com/functions/get_chart_data.php?period=' + period;
+            const url = 'functions/get_chart_data.php?period=' + period;
             console.log('Fetching from:', url);
             
             const response = await fetch(url);
